@@ -1,4 +1,4 @@
-from utils import LockApp
+from utils import LockApp, PrinterListManager
 
 def main():
     singleton = LockApp()
@@ -6,6 +6,7 @@ def main():
     if singleton.is_already_running():
         return
 
+    PrinterListManager()
     
 
 if __name__ == "__main__":
