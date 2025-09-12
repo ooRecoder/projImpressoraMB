@@ -123,33 +123,3 @@ class PrinterListManager:
         
         return [printer for printer in self.organized_data if printer['type'] == 'local'] # type: ignore
 
-if __name__ == "__main__":
-    # Exemplo de uso da classe
-    printer_manager = PrinterListManager()
-    
-    # Obtém os dados brutos
-    raw_data = printer_manager.list_available_printers()
-    print("Dados brutos:", raw_data)
-    
-    # Organiza os dados
-    organized_data = printer_manager.organize_printer_data()
-    print("\nDados organizados:")
-    for printer in organized_data:
-        print(printer)
-    
-    # Extrai apenas os nomes
-    names = printer_manager.list_name_printers()
-    print("\nNomes das impressoras:")
-    for name in names:
-        print(name)
-    
-    # Exemplo de métodos adicionais
-    print("\nImpressoras de rede:")
-    network_printers = printer_manager.get_network_printers()
-    for printer in network_printers:
-        print(f"{printer['display_name']} - {printer['protocol']}")
-    
-    # Buscar impressora específica
-    if names:
-        specific_printer = printer_manager.get_printer_by_name(names[0])
-        print(f"\nPrimeira impressora encontrada: {specific_printer}")
