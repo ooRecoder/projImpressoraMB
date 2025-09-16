@@ -1,6 +1,6 @@
 from utils import LockApp
 import win32print
-from core import PrinterListManager, PrinterStatusManager, AppLogger
+from core import PrinterListManager, PrinterStatusManager, AppLogger, PrinterAccessManager
 
 def main():
     singleton = LockApp()
@@ -10,6 +10,7 @@ def main():
 
     AppLogger()
     PrinterListManager()
+    PrinterAccessManager()
     
 
 if __name__ == "__main__":
@@ -35,7 +36,8 @@ if __name__ == "__main__":
             
             # Testa o status de cada impressora
             status = printer_manager.get_printer_status(printer_name)
-            logger.info(f"Status de {printer_name}: {status['status'].value}")
+            print(status)
+            logger.info(f"Status de {printer_name}: {status['status']}")
             
             # Testa jobs se houver
             jobs = printer_manager.get_jobs_info(printer_name)
