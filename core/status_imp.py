@@ -129,4 +129,32 @@ class PrinterStatusManager:
             return False
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-                    
+        
+    def check_paper_status(self, printer_name: str) -> Dict[str, bool]:
+        """
+        Verifica o estado do papel na impressora
+        """
+        status = self.get_printer_status(printer_name)
+        
+        paper_status = {
+            'paper_available': True,
+            'paper_jam': False,
+            'paper_low': False,
+            'paper_out': False
+        }
+        
+        # Verifica códigos de status relacionados a papel
+        status_codes = status.get('status_code', 0)
+        
+        if status_codes & win32print.PRINTER_STATUS_PAPER_OUT:
+            paper_status['paper_available'] = False
+            paper_status['paper_out'] = True
+        
+        if status_codes & win32print.PRINTER_STATUS_PAPER_JAM:
+            paper_status['paper_jam'] = True
+            paper_status['paper_available'] = False
+        
+        if status_codes & win32print.PRINTER_STATUS_PAPER_PROBLEM:
+            paper_status['paper_low'] = True
+        
+        return paper_status
