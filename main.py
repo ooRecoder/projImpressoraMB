@@ -20,9 +20,8 @@ def main():
     AppLogger()
     PrinterListManager()
     PrinterAccessManager()
-    
-    # TESTANDO
-    
+
+def test():
     printer_list = PrinterListManager.instance
     if not AppLogger.instance or not printer_list:
         raise ImportError("Instância do logger não inicializada")
@@ -33,16 +32,16 @@ def main():
     printer_status = PrinterStatusManager()
     printer_job = PrinterJobManager()
     
-    if not printer_list:
-        return
     
     printers = printer_list.list_name_printers()
-    printer_name = printers[1]
+    printer_name = printers[0]
     
     paper_status = printer_status.check_paper_status(printer_name)
     print(paper_status)
+
 if __name__ == "__main__":
     main()
+    test()
 
     
     

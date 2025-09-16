@@ -1,3 +1,4 @@
+from argparse import OPTIONAL
 from typing import Dict, List
 import time
 import win32print
@@ -134,27 +135,57 @@ class PrinterStatusManager:
         """
         Verifica o estado do papel na impressora
         """
-        status = self.get_printer_status(printer_name)
+        self.logger.debug(f"Verificando estado do papel na impressora: {printer_name}")
         
-        paper_status = {
-            'paper_available': True,
-            'paper_jam': False,
-            'paper_low': False,
-            'paper_out': False
-        }
-        
-        # Verifica códigos de status relacionados a papel
-        status_codes = status.get('status_code', 0)
-        
-        if status_codes & win32print.PRINTER_STATUS_PAPER_OUT:
-            paper_status['paper_available'] = False
-            paper_status['paper_out'] = True
-        
-        if status_codes & win32print.PRINTER_STATUS_PAPER_JAM:
-            paper_status['paper_jam'] = True
-            paper_status['paper_available'] = False
-        
-        if status_codes & win32print.PRINTER_STATUS_PAPER_PROBLEM:
-            paper_status['paper_low'] = True
-        
-        return paper_status
+        try:
+            status = self.get_printer_status(printer_name)
+            
+            paper_status = {
+                'paper_available': True,
+                'paper_jam': False,
+                'paper_low': False,
+                'paper_out': False
+            }
+            
+            # Verifica códigos de status relacionados a papel
+            status_codes = status.get('status_code', 0)
+            
+            self.logger.debug(f"Código de status da impressora {printer_name}: {status_codes}")
+            
+            if status_codes & win32print.PRINTER_STATUS_PAPER_OUT:
+                paper_status['paper_available'] = False
+                paper_status['paper_out'] = True
+                self.logger.warning(f"Impressora {printer_name}: Papel esgotado")
+            
+            if status_codes & win32print.PRINTER_STATUS_PAPER_JAM:
+                paper_status['paper_jam'] = True
+                paper_status['paper_available'] = False
+                self.logger.warning(f"Impressora {printer_name}: Papel encravado")
+            
+            if status_codes & win32print.PRINTER_STATUS_PAPER_PROBLEM:
+                paper_status['paper_low'] = True
+                self.logger.warning(f"Impressora {printer_name}: Problema com o papel (pouco papel ou outro problema)")
+            
+            # Log do estado final do papel
+            if paper_status['paper_available']:
+                self.logger.info(f"Impressora {printer_name}: Papel disponível e em bom estado")
+            else:
+                self.logger.error(f"Impressora {printer_name}: Problemas com papel - "
+                                f"Esgotado: {paper_status['paper_out']}, "
+                                f"Encravado: {paper_status['paper_jam']}, "
+                                f"Pouco: {paper_status['paper_low']}")
+            
+            self.logger.debug(f"Estado do papel para {printer_name}: {paper_status}")
+            return paper_status
+            
+        except Exception as e:
+            self.logger.error(f"Erro ao verificar estado do papel na impressora {printer_name}: {e}", exc_info=True)
+            # Retorna um status de erro
+            return {
+                'paper_available': False,
+                'paper_jam': False,
+                'paper_low': False,
+                'paper_out': False,
+                'error': str(e)
+            }
+            
