@@ -82,40 +82,7 @@ class PrinterStatusManager:
             return 0
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-
-    def get_jobs_info(self, printer_name: str) -> List[Dict]:
-        """Obtém informações detalhadas sobre os jobs na fila"""
-        try:
-            handle = self.access_manager.open_printer(printer_name) # type: ignore
-            if not handle:
-                return []
-
-            jobs = win32print.EnumJobs(handle, 0, -1, 2)
-            jobs_info = []
-
-            for job in jobs:
-                job_info = {
-                    'job_id': job['JobId'],
-                    'document_name': job['pDocument'],
-                    'status': self.access_manager._decode_job_status(job['Status']), # type: ignore
-                    'status_code': job['Status'],
-                    'pages_printed': job['PagesPrinted'],
-                    'total_pages': job['TotalPages'],
-                    'submitted_time': job['Submitted'].time() if job['Submitted'] else None,
-                    'user_name': job['pUserName'],
-                    'machine_name': job['pMachineName'],
-                    'data_type': job['pDatatype'],
-                    'priority': job['Priority']
-                }
-                jobs_info.append(job_info)
-
-            return jobs_info
-        except Exception as e:
-            self.logger.error(f"Erro ao obter jobs da impressora {printer_name}: {e}", exc_info=True)
-            return []
-        finally:
-            self.access_manager.close_printer(printer_name) # type: ignore
-
+            
     def is_printer_ready(self, printer_name: str) -> bool:
         """Verifica rapidamente se a impressora está pronta"""
         status = self.get_printer_status(printer_name)

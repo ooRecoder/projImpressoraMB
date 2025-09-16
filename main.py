@@ -38,11 +38,7 @@ if __name__ == "__main__":
             status = printer_manager.get_printer_status(printer_name)
             print(status)
             logger.info(f"Status de {printer_name}: {status['status']}")
-            
-            # Testa jobs se houver
-            jobs = printer_manager.get_jobs_info(printer_name)
-            if jobs:
-                logger.info(f"Jobs encontrados em {printer_name}: {len(jobs)}")
+            logger.info(f"Jobs encontrados em {printer_name}: {status["job_count"]}")
                 
                 
             
