@@ -29,3 +29,4 @@ logs/
 # Database
 *.db
 *.sqlite
+.env
