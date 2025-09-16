@@ -47,21 +47,20 @@ class PrinterAccessManager:
         self.printer_list_manager = PrinterListManager.instance
         self.logger = AppLogger.instance.get_logger(__name__) # type: ignore
     
-    def open_printer(self, printer_name: str) -> Optional[Any]:
-        """Abre uma conexão com a impressora"""
+    def open_printer(self, printer_name: str, desired_access: int = win32print.PRINTER_ACCESS_USE) -> Optional[Any]:
+        """Abre uma conexão com a impressora com nível de acesso específico"""
         try:
             if printer_name in self.open_handles:
                 self.logger.debug(f"Handle já aberto para a impressora: {printer_name}")
                 return self.open_handles[printer_name]
             
-            handle = win32print.OpenPrinter(printer_name)
+            handle = win32print.OpenPrinter(printer_name, {"DesiredAccess": desired_access})
             self.open_handles[printer_name] = handle
-            self.logger.info(f"Impressora '{printer_name}' aberta com sucesso.")
+            self.logger.info(f"Impressora '{printer_name}' aberta com sucesso (acesso: {desired_access}).")
             return handle
         except Exception as e:
             self.logger.error(f"Erro ao abrir impressora {printer_name}: {e}", exc_info=True)
             return None
-    
     def close_printer(self, printer_name: str) -> bool:
         """Fecha a conexão com uma impressora"""
         try:

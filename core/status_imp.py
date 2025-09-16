@@ -82,11 +82,6 @@ class PrinterStatusManager:
             return 0
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-            
-    def is_printer_ready(self, printer_name: str) -> bool:
-        """Verifica rapidamente se a impressora está pronta"""
-        status = self.get_printer_status(printer_name)
-        return status.get('is_ready', False)
 
     def monitor_printer_status(self, printer_name: str, interval: int = 5, duration: int = 60) -> None:
         """Monitora o status da impressora por um período"""
@@ -102,3 +97,36 @@ class PrinterStatusManager:
             time.sleep(interval)
 
         self.logger.info(f"Monitoramento da impressora {printer_name} concluído")
+
+    def modify_printer_status(self, printer_name: str, action: str) -> bool:
+        handle = None
+        try:
+            desired_access = win32print.PRINTER_ACCESS_ADMINISTER
+            handle = self.access_manager.open_printer(printer_name, desired_access) # type: ignore
+            
+            if not handle:
+                self.logger.error(f"Não foi possível abrir a impressora {printer_name}")
+                return False
+
+            if action == 'pause':
+                # Para Level=0 (PRINTER_CONTROL_*), pPrinter deve ser None
+                win32print.SetPrinter(handle, 0, None, win32print.PRINTER_CONTROL_PAUSE)
+                self.logger.info(f"Impressora {printer_name} pausada")
+                
+            elif action == 'resume':
+                # Para Level=0 (PRINTER_CONTROL_*), pPrinter deve ser None
+                win32print.SetPrinter(handle, 0, None, win32print.PRINTER_CONTROL_RESUME)
+                self.logger.info(f"Impressora {printer_name} retomada")
+                
+            else:
+                self.logger.error(f"Ação {action} não reconhecida")
+                return False
+
+            return True
+
+        except Exception as e:
+            self.logger.error(f"Erro ao modificar status da impressora {printer_name}: {e}", exc_info=True)
+            return False
+        finally:
+            self.access_manager.close_printer(printer_name) # type: ignore
+                    
