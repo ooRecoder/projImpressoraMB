@@ -71,8 +71,7 @@ class PrinterAccessManager:
             return True
         except Exception as e:
             self.logger.error(f"Erro ao fechar impressora {printer_name}: {e}", exc_info=True)
-            return False
-    
+            return False 
     def close_all_printers(self) -> bool:
         """Fecha todas as conexões abertas com impressoras"""
         success = True
@@ -84,7 +83,6 @@ class PrinterAccessManager:
         else:
             self.logger.warning("Algumas impressoras não puderam ser fechadas corretamente.")
         return success
-    
     def _decode_status(self, status_code: int) -> List[str]:
         """Decodifica o código de status da impressora"""
         status_messages = []
@@ -122,8 +120,7 @@ class PrinterAccessManager:
         if not status_messages:
             status_messages.append("Pronta")
         
-        return status_messages
-    
+        return status_messages 
     def _decode_attributes(self, attributes: int) -> List[str]:
         """Decodifica os atributos da impressora"""
         attribute_messages = []
@@ -147,8 +144,7 @@ class PrinterAccessManager:
             if attributes & code:
                 attribute_messages.append(message)
         
-        return attribute_messages
-    
+        return attribute_messages 
     def _decode_job_status(self, status_code: int) -> List[str]:
         """Decodifica o status do trabalho de impressão"""
         status_messages = []
@@ -174,7 +170,6 @@ class PrinterAccessManager:
             status_messages.append("Na fila")
         
         return status_messages
-    
     def test_printer_connection(self, printer_name: str, timeout: int = 10) -> Dict[str, Any]:
         """Testa a conexão com a impressora"""
         result = {
@@ -204,7 +199,6 @@ class PrinterAccessManager:
             self.logger.error(f"Erro ao testar conexão com a impressora {printer_name}: {e}", exc_info=True)
         
         return result
-    
     def __del__(self):
         """Destrutor - fecha todas as conexões abertas"""
         self.close_all_printers()

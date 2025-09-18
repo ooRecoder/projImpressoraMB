@@ -2,7 +2,7 @@ import win32print
 from typing import List, Dict, Optional
 
 from .logging import AppLogger
-from .printer_acess_manager import PrinterAccessManager
+from .printer_access_manager import PrinterAccessManager
 
 class PrinterJobManager:
     """Classe para gerenciar jobs de impressão"""

@@ -1,20 +1,21 @@
-from argparse import OPTIONAL
-from typing import Dict, List
+from typing import Dict, Union
 import time
 import win32print
 
 from .logging import AppLogger
-from .printer_acess_manager import PrinterAccessManager, PrinterStatus  # importa a classe já existente
+from .printer_access_manager import PrinterAccessManager, PrinterStatus
+from .print_manager import PrinterPrint
 
 
 class PrinterStatusManager:
     """Classe para gerenciar e verificar o status de impressoras de forma mais alto nível"""
 
-    def __init__(self):
+    def __init__(self, PCA):
+        logger_instance = AppLogger.instance
         self.logger = AppLogger.instance.get_logger(__name__)  # type: ignore
+        self.access_manager = PCA
+        self.printer_print = PrinterPrint(PCA, logger_instance)
         self.logger.info("PrinterStatusManager inicializado")
-        self.access_manager = PrinterAccessManager.instance
-
     def get_printer_status(self, printer_name: str) -> Dict:
         """
         Obtém o status completo da impressora
@@ -68,7 +69,6 @@ class PrinterStatusManager:
             }
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-
     def get_job_count(self, printer_name: str) -> int:
         """Obtém o número de jobs na fila de impressão"""
         try:
@@ -83,7 +83,6 @@ class PrinterStatusManager:
             return 0
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-
     def monitor_printer_status(self, printer_name: str, interval: int = 5, duration: int = 60) -> None:
         """Monitora o status da impressora por um período"""
         self.logger.info(f"Iniciando monitoramento da impressora {printer_name}")
@@ -98,7 +97,6 @@ class PrinterStatusManager:
             time.sleep(interval)
 
         self.logger.info(f"Monitoramento da impressora {printer_name} concluído")
-
     def modify_printer_status(self, printer_name: str, action: str) -> bool:
         handle = None
         try:
@@ -130,62 +128,100 @@ class PrinterStatusManager:
             return False
         finally:
             self.access_manager.close_printer(printer_name) # type: ignore
-        
-    def check_paper_status(self, printer_name: str) -> Dict[str, bool]:
+    def check_paper_status(self, printer_name: str, force_update: bool = False) -> Dict[str, Union[bool, str]]:
         """
-        Verifica o estado do papel na impressora
+        Verifica o estado do papel na impressora com verificações adicionais
+        para maior confiabilidade
+        
+        Args:
+            printer_name: Nome da impressora
+            force_update: Se True, força atualização do status imprimindo uma página em branco
+            
+        Returns:
+            Dict com informações sobre o estado do papel
         """
         self.logger.debug(f"Verificando estado do papel na impressora: {printer_name}")
         
         try:
+            # Se forçando atualização, imprime uma página em branco primeiro
+            if force_update:
+                self.logger.info(f"Forçando atualização do status do papel em {printer_name} através de impressão de teste")
+                print_result = self.printer_print.print_blank_page(printer_name, copies=1)
+                
+                if not print_result['success']:
+                    self.logger.warning(f"Falha ao imprimir página de teste para atualizar status: {print_result.get('error', 'Erro desconhecido')}")
+                    # Continua mesmo com falha, pois pode ser que o status já esteja disponível
+                
+                # Aguarda um breve momento para o sistema atualizar o status
+                time.sleep(2)
+            
             status = self.get_printer_status(printer_name)
             
-            paper_status = {
+            paper_status: Dict[str, Union[bool, str]] = {
                 'paper_available': True,
                 'paper_jam': False,
                 'paper_low': False,
-                'paper_out': False
+                'paper_out': False,
+                'status_updated': True,
+                'force_update_performed': force_update
             }
             
-            # Verifica códigos de status relacionados a papel
             status_codes = status.get('status_code', 0)
             
             self.logger.debug(f"Código de status da impressora {printer_name}: {status_codes}")
             
-            if status_codes & win32print.PRINTER_STATUS_PAPER_OUT:
+            # Verifica múltiplos códigos de status relacionados a papel
+            paper_out_detected = bool(status_codes & win32print.PRINTER_STATUS_PAPER_OUT)
+            paper_jam_detected = bool(status_codes & win32print.PRINTER_STATUS_PAPER_JAM)
+            paper_problem_detected = bool(status_codes & win32print.PRINTER_STATUS_PAPER_PROBLEM)
+            offline_status = bool(status_codes & win32print.PRINTER_STATUS_OFFLINE)
+            
+            # Se a impressora está offline, o status do papel pode não ser confiável
+            if offline_status:
+                self.logger.warning(f"Impressora {printer_name} offline - status do papel pode não ser confiável")
+                paper_status['status_updated'] = False
+            
+            if paper_out_detected:
                 paper_status['paper_available'] = False
                 paper_status['paper_out'] = True
                 self.logger.warning(f"Impressora {printer_name}: Papel esgotado")
             
-            if status_codes & win32print.PRINTER_STATUS_PAPER_JAM:
+            if paper_jam_detected:
                 paper_status['paper_jam'] = True
                 paper_status['paper_available'] = False
                 self.logger.warning(f"Impressora {printer_name}: Papel encravado")
             
-            if status_codes & win32print.PRINTER_STATUS_PAPER_PROBLEM:
+            if paper_problem_detected:
                 paper_status['paper_low'] = True
-                self.logger.warning(f"Impressora {printer_name}: Problema com o papel (pouco papel ou outro problema)")
+                # Não necessariamente significa papel indisponível, apenas problema
+                self.logger.warning(f"Impressora {printer_name}: Problema com o papel detectado")
+            
+            # Verificação adicional: se todos os flags de papel estão zerados mas a impressora está online
+            if (not paper_out_detected and not paper_jam_detected and not paper_problem_detected and 
+                not offline_status and status.get('is_online', False)):
+                paper_status['paper_available'] = True
+                self.logger.info(f"Impressora {printer_name}: Papel disponível e em bom estado")
             
             # Log do estado final do papel
             if paper_status['paper_available']:
-                self.logger.info(f"Impressora {printer_name}: Papel disponível e em bom estado")
+                self.logger.info(f"Impressora {printer_name}: Papel disponível")
             else:
                 self.logger.error(f"Impressora {printer_name}: Problemas com papel - "
                                 f"Esgotado: {paper_status['paper_out']}, "
                                 f"Encravado: {paper_status['paper_jam']}, "
-                                f"Pouco: {paper_status['paper_low']}")
+                                f"Problema: {paper_status['paper_low']}")
             
             self.logger.debug(f"Estado do papel para {printer_name}: {paper_status}")
             return paper_status
             
         except Exception as e:
             self.logger.error(f"Erro ao verificar estado do papel na impressora {printer_name}: {e}", exc_info=True)
-            # Retorna um status de erro
             return {
                 'paper_available': False,
                 'paper_jam': False,
                 'paper_low': False,
                 'paper_out': False,
+                'status_updated': False,
+                'force_update_performed': force_update,
                 'error': str(e)
             }
-            
