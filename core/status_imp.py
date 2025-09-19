@@ -146,7 +146,7 @@ class PrinterStatusManager:
             # Se forçando atualização, imprime uma página em branco primeiro
             if force_update:
                 self.logger.info(f"Forçando atualização do status do papel em {printer_name} através de impressão de teste")
-                print_result = self.printer_print.print_blank_page(printer_name, copies=1)
+                print_result = self.printer_print.print_blank_page(printer_name)
                 
                 if not print_result['success']:
                     self.logger.warning(f"Falha ao imprimir página de teste para atualizar status: {print_result.get('error', 'Erro desconhecido')}")
