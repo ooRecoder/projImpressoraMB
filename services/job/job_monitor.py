@@ -1,7 +1,6 @@
 import threading
 import time
 from typing import List, Dict, Callable, Optional
-from datetime import datetime
 from core import AppLogger, PrinterJobManager
 from .job_utils import detect_job_changes
 
@@ -24,7 +23,8 @@ class PrinterJobMonitor:
         if self._monitoring:
             self.logger.warning("Monitoramento já em execução")
             return False
-
+        
+        self.printer_name = printer_name
         self._monitoring = True
         self._monitor_thread = threading.Thread(
             target=self._monitor_loop,
