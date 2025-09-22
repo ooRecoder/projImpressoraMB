@@ -1,12 +1,5 @@
 from utils import LockApp
-from core import (
-    PrinterListManager,
-    PrinterStatusManager,
-    AppLogger,
-    PrinterAccessManager,
-    PrinterJobManager,
-)
-
+from core import ( PrinterListManager, PrinterStatusManager, AppLogger, PrinterAccessManager, PrinterJobManager)
 
 def main():
     singleton = LockApp()
