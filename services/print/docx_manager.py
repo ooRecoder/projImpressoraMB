@@ -2,7 +2,6 @@ from docx import Document
 import tempfile
 import os
 import time
-from typing import Optional
 
 class DocxManager:
     """Gerencia criação e remoção de arquivos DOCX temporários"""

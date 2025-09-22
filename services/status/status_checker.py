@@ -1,7 +1,7 @@
 import win32print
 from typing import Dict
 from core import AppLogger, PrinterStatus
-
+from utils import detect_printer_model
 
 class PrinterStatusChecker:
     """Consulta status geral da impressora"""
@@ -37,6 +37,8 @@ class PrinterStatusChecker:
                 "driver_name": printer_info["pDriverName"],
                 "location": printer_info["pLocation"],
                 "comment": printer_info["pComment"],
+                "model": detect_printer_model(printer_name, printer_info["pShareName"], 
+                                              printer_info["pDriverName"], printer_info["pComment"])
             }
         except Exception as e:
             self.logger.error(f"Erro ao obter status da impressora {printer_name}: {e}", exc_info=True)

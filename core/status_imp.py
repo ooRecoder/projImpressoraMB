@@ -2,8 +2,9 @@ from typing import Dict, Union
 import time
 import win32print
 
+
 from .logging import AppLogger
-from .printer_access_manager import PrinterAccessManager, PrinterStatus
+from .printer_access_manager import PrinterStatus
 from .print_manager import PrinterPrint
 
 

@@ -22,6 +22,7 @@ def main():
 def test():
     access_manager = PrinterAccessManager.instance
     printer_list = PrinterListManager.instance
+
     if not AppLogger.instance or not printer_list:
         raise ImportError("Instância do logger não inicializada")
 
@@ -30,10 +31,10 @@ def test():
     # Cria instâncias de gerenciadores
     printer_status = PrinterStatusManager(access_manager)
     printer_job = PrinterJobManager()
-    
+
     # Obtém lista de impressoras
     printers = printer_list.list_name_printers()
-    
+
     if not printers:
         logger.error("Nenhuma impressora encontrada no sistema")
         return
